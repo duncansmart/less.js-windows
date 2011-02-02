@@ -1,0 +1,137 @@
+<!--
+Less.js compiler for Windows Script Host
+http://blog.dotsmart.net/
+
+Copyright (c) 2010, Duncan Smart
+Licensed under the Apache 2.0 License.
+-->
+<job>
+<script language="jscript">
+     // Stub out globals
+    var window = this;
+    var location = window.location = { 
+        port: 0,
+        href: 'file:/foo'
+    };
+    var fso = new ActiveXObject("Scripting.FileSystemObject");
+    
+    var util = {
+        readText: function (filename) {
+            var file = fso.OpenTextFile(filename);
+            var text = file.ReadAll();
+            
+            // Strip off any UTF-8 BOM
+            var utf8bom = String.fromCharCode(0xEF,0xBB,0xBF);
+            if (text.substr(0, utf8bom.length) == utf8bom) {
+                text = text.substr(utf8bom.length);
+            }
+            file.Close();
+            return text;
+        }
+    };
+    
+    // XMLHttpRequest that just gets local files. Used when processing "@import"
+    function XMLHttpRequest(){}
+    XMLHttpRequest.prototype = {
+        open: function (method, url, async) {
+            this.url = url;
+        },
+        send: function () {
+            var filename = fso.GetAbsolutePathName(this.url);
+            try {
+                this.status = 200;
+                this.responseText = util.readText(filename);
+            }
+            catch (e) {
+                this.status = 404;
+                this.responseText = e.description;
+            }
+        },
+        setRequestHeader:  function () {},
+        getResponseHeader: function () {}
+    };
+    
+    // Fake document
+    var document = {
+        _dummyElement: {
+            childNodes: [], 
+            appendChild: function(){},
+            style: {}
+        },
+        getElementsByTagName: function(){ return []; },
+        getElementById: function(){ return this._dummyElement; },
+        createElement:  function(){ return this._dummyElement; },
+        createTextNode: function(){ return this._dummyElement; }
+    };        
+        
+</script>
+
+<!-- less.js from https://github.com/cloudhead/less.js/tree/master/dist/ -->
+<script language="jscript" src="less.js" />
+
+<script language="jscript"> 
+    // Parse args
+    var args = {};
+    for(var i = 0; i < WScript.Arguments.Length; i++) {
+        var arg = WScript.Arguments.Item(i);
+        // Handle "-switch" and "--switch"
+        var match = arg.match(/^--?([a-z][0-9a-z-]*)$/i);
+        if (match) {
+            i = match[1];
+            arg = true;
+        }
+        args[i] = arg;
+    }
+
+    var input = args[0];
+    var output = args[1];
+            
+    if (! input) {
+        WScript.StdErr.WriteLine("lessc.wsf: no input files");
+        WScript.StdErr.WriteLine("Usage: cscript //nologo lessc.wsf input.less [output.css] [-compress]");
+        WScript.Quit(1);
+    }
+
+    var data = util.readText(input);
+    
+    var parser = new less.Parser( {
+        filename: fso.GetAbsolutePathName(input), 
+        paths: [fso.GetParentFolderName(input) + '\\']
+    });
+
+    try {
+        parser.parse(data, function (err, tree) {
+            if (err) {
+                WScript.StdErr.WriteLine("ERR: ");
+                for(var i in err) {
+                    if (err[i]) {
+                        WScript.StdErr.WriteLine("  "+ i + ': ' + err[i]);
+                    }
+                }
+                WScript.Quit(2);
+            } 
+            else {
+                var css = tree.toCSS( {compress: args.compress} );
+                if (output) {
+                    var outputfile = fso.CreateTextFile(output);
+                    outputfile.Write(css);
+                    outputfile.Close();
+                }
+                else {
+                    WScript.StdOut.Write(css);
+                }
+            }
+        });
+    }
+    catch (e)
+    {
+        WScript.StdErr.WriteLine("ERROR:");
+        for(var i in e) {
+            if (e[i]) {
+                WScript.StdErr.WriteLine("  "+ i + ': ' + e[i]);
+            }
+        }
+        WScript.Quit(3);
+    }            
+</script>
+</job>
