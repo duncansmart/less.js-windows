@@ -11,7 +11,7 @@ Licensed under the Apache 2.0 License.
     var window = this;
     var location = window.location = { 
         port: 0,
-        href: 'file:/foo'
+        href: ''
     };
     var fso = new ActiveXObject("Scripting.FileSystemObject");
     
@@ -93,10 +93,9 @@ Licensed under the Apache 2.0 License.
     }
 
     var data = util.readText(input);
-    
     var parser = new less.Parser( {
-        filename: fso.GetAbsolutePathName(input), 
-        paths: [fso.GetParentFolderName(input) + '\\']
+        filename: input, 
+        paths: ['.\\']
     });
 
     try {
