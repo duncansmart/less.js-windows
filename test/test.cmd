@@ -1,6 +1,6 @@
 @echo off
 pushd "%~dp0"
-set TEST_FILE="%TEMP%\less-test-%RANDOM%.css"
+set TEST_FILE="less-test-out.css"
 call ..\lessc.cmd test.less > %TEST_FILE%
 echo n | comp test-expected.css %TEST_FILE% /A 2> nul
 if %ERRORLEVEL% EQU 0 (
@@ -8,5 +8,5 @@ if %ERRORLEVEL% EQU 0 (
 ) else (
     echo === FAIL ===
 )
-del %TEST_FILE%
+::del %TEST_FILE%
 popd

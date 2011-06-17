@@ -37,6 +37,9 @@ h2 {
 #footer {
   color: #333333;
 }
+#urltest {
+  background-image: url(../../images/banana.png);
+}
 /* Importing */
 /* test-import.less */
 #foo {

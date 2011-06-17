@@ -14,14 +14,15 @@ Licensed under the Apache 2.0 License.
         href: ''
     };
     var fso = new ActiveXObject("Scripting.FileSystemObject");
-    
+
     var util = {
         readText: function (filename) {
+            //WScript.StdErr.WriteLine("readText: " + filename);
             var file = fso.OpenTextFile(filename);
             var text = file.ReadAll();
-            
+
             // Strip off any UTF-8 BOM
-            var utf8bom = String.fromCharCode(0xEF,0xBB,0xBF);
+            var utf8bom = String.fromCharCode(0xEF, 0xBB, 0xBF);
             if (text.substr(0, utf8bom.length) == utf8bom) {
                 text = text.substr(utf8bom.length);
             }
@@ -85,17 +86,26 @@ Licensed under the Apache 2.0 License.
 
     var input = args[0];
     var output = args[1];
-            
+
     if (! input) {
         WScript.StdErr.WriteLine("lessc.wsf: no input files");
         WScript.StdErr.WriteLine("Usage: cscript //nologo lessc.wsf input.less [output.css] [-compress]");
         WScript.Quit(1);
     }
 
-    var data = util.readText(input);
+    var data;
+    if (input == '-') {
+        var chunks = [];
+        while (!WScript.StdIn.AtEndOfStream)
+            chunks.push(WScript.StdIn.ReadAll());
+        data = chunks.join('');
+    }
+    else {
+        data = util.readText(input);
+    }    
+
     var parser = new less.Parser( {
-        filename: input, 
-        paths: ['.\\']
+        filename: input
     });
 
     try {
