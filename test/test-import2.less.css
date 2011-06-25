@@ -1,0 +1,9 @@
+// less.wsf has a little hack so that *.less should resolve *.less.css also. 
+// Helps with Visual Studio ensuring that file BuildAction is set to Content and you get rudimentary syntax highlighting.
+
+/* test-import2.less.css */
+@foo_color: #eff;
+
+#foo {
+  color: @foo_color;
+}

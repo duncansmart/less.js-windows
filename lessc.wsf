@@ -39,6 +39,14 @@ Licensed under the Apache 2.0 License.
         },
         send: function () {
             var filename = fso.GetAbsolutePathName(this.url);
+            //WScript.StdErr.WriteLine("XHR.send " + filename);
+            
+            // Little hack so *.less will resolve to *.less.css also. Helps with Visual Studio 
+            // ensuring that file BuildAction is set to Content and you get rudimentary syntax highlighting with no set up.
+            if (filename.match(/.less$/i) && !fso.FileExists(filename)) {
+                filename = filename.replace(/.less$/i, '.less.css');
+            }
+            
             try {
                 this.status = 200;
                 this.responseText = util.readText(filename);
