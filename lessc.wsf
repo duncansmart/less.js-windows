@@ -19,7 +19,8 @@ Licensed under the Apache 2.0 License.
         readText: function (filename) {
             //WScript.StdErr.WriteLine("readText: " + filename);
             var file = fso.OpenTextFile(filename);
-            var text = file.ReadAll();
+            // Don't error on empty files
+            var text = file.AtEndOfStream ? '' : file.ReadAll();
 
             // Strip off any UTF-8 BOM
             var utf8bom = String.fromCharCode(0xEF, 0xBB, 0xBF);
