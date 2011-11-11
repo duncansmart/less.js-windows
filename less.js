@@ -926,7 +926,7 @@ less.Parser = function Parser(env) {
 
                 if (e) { return new(tree.Element)(c, e) }
 
-                if (c.value && c.value[0] === '&') {
+                if (c.value && c.value.charAt(0) === '&') {
                   return new(tree.Element)(c, null);
                 }
             },
@@ -2257,7 +2257,7 @@ tree.Ruleset.prototype = {
 
         for (var i = 0; i < selector.elements.length; i++) {
             el = selector.elements[i];
-            if (el.combinator.value[0] === '&') {
+            if (el.combinator.value.charAt(0) === '&') {
                 hasParentSelector = true;
             }
             if (hasParentSelector) afterElements.push(el);
