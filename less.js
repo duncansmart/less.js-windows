@@ -1,5 +1,5 @@
 //
-// LESS - Leaner CSS v1.1.4
+// LESS - Leaner CSS v1.1.5
 // http://lesscss.org
 // 
 // Copyright (c) 2009-2011, Alexis Sellier
@@ -135,13 +135,23 @@ if (!String.prototype.trim) {
 }
 var less, tree;
 
-if (typeof(window) === 'undefined') {
+if (typeof environment === "object" && ({}).toString.call(environment) === "[object Environment]") {
+    // Rhino
+    // Details on how to detect Rhino: https://github.com/ringo/ringojs/issues/88
+    less = {};
+    tree = less.tree = {};
+    less.mode = 'rhino';
+} else if (typeof(window) === 'undefined') {
+    // Node.js
     less = exports,
-    tree = require('less/tree');
+    tree = require('./tree');
+    less.mode = 'rhino';
 } else {
+    // Browser
     if (typeof(window.less) === 'undefined') { window.less = {} }
     less = window.less,
     tree = window.less.tree = {};
+    less.mode = 'browser';
 }
 //
 // less.js - parser
@@ -611,7 +621,7 @@ less.Parser = function Parser(env) {
                 //
                 keyword: function () {
                     var k;
-                    if (k = $(/^[A-Za-z-]+/)) { return new(tree.Keyword)(k) }
+                    if (k = $(/^[_A-Za-z-][_A-Za-z0-9-]*/)) { return new(tree.Keyword)(k) }
                 },
 
                 //
@@ -805,7 +815,7 @@ less.Parser = function Parser(env) {
                     if (s !== '.' && s !== '#') { return }
 
                     while (e = $(/^[#.](?:[\w-]|\\(?:[a-fA-F0-9]{1,6} ?|[^a-fA-F0-9]))+/)) {
-                        elements.push(new(tree.Element)(c, e));
+                        elements.push(new(tree.Element)(c, e, i));
                         c = $('>');
                     }
                     $('(') && (args = $(this.entities.arguments)) && $(')');
@@ -922,12 +932,13 @@ less.Parser = function Parser(env) {
                 var e, t, c;
 
                 c = $(this.combinator);
-                e = $(/^(?:[.#]?|:*)(?:[\w-]|\\(?:[a-fA-F0-9]{1,6} ?|[^a-fA-F0-9]))+/) || $('*') || $(this.attribute) || $(/^\([^)@]+\)/) || $(/^(?:\d*\.)?\d+%/);
+                e = $(/^(?:\d+\.\d+|\d+)%/) || $(/^(?:[.#]?|:*)(?:[\w-]|\\(?:[a-fA-F0-9]{1,6} ?|[^a-fA-F0-9]))+/) ||
+                    $('*') || $(this.attribute) || $(/^\([^)@]+\)/);
 
-                if (e) { return new(tree.Element)(c, e) }
+                if (e) { return new(tree.Element)(c, e, i) }
 
                 if (c.value && c.value.charAt(0) === '&') {
-                  return new(tree.Element)(c, null);
+                    return new(tree.Element)(c, null, i);
                 }
             },
 
@@ -1024,16 +1035,11 @@ less.Parser = function Parser(env) {
                 var selectors = [], s, rules, match;
                 save();
 
-                if (match = /^([.#:% \w-]+)[\s\n]*\{/.exec(chunks[j])) {
-                    i += match[0].length - 1;
-                    selectors = [new(tree.Selector)([new(tree.Element)(null, match[1])])];
-                } else {
-                    while (s = $(this.selector)) {
-                        selectors.push(s);
-                        $(this.comment);
-                        if (! $(',')) { break }
-                        $(this.comment);
-                    }
+                while (s = $(this.selector)) {
+                    selectors.push(s);
+                    $(this.comment);
+                    if (! $(',')) { break }
+                    $(this.comment);
                 }
 
                 if (selectors.length > 0 && (rules = $(this.block))) {
@@ -1101,7 +1107,7 @@ less.Parser = function Parser(env) {
 
                 if (value = $(this['import'])) {
                     return value;
-                } else if (name = $(/^@media|@page/) || $(/^@(?:-webkit-)?keyframes/)) {
+                } else if (name = $(/^@media|@page/) || $(/^@(?:-webkit-|-moz-)?keyframes/)) {
                     types = ($(/^[^{]+/) || '').trim();
                     if (rules = $(this.block)) {
                         return new(tree.Directive)(name + " " + types, rules);
@@ -1228,7 +1234,7 @@ less.Parser = function Parser(env) {
     };
 };
 
-if (typeof(window) !== 'undefined') {
+if (less.mode === 'browser' || less.mode === 'rhino') {
     //
     // Used by `@import` directives
     //
@@ -1331,6 +1337,13 @@ tree.functions = {
         hsl.a = clamp(hsl.a);
         return hsla(hsl);
     },
+    fade: function (color, amount) {
+        var hsl = color.toHSL();
+
+        hsl.a = amount.value / 100;
+        hsl.a = clamp(hsl.a);
+        return hsla(hsl);
+    },
     spin: function (color, amount) {
         var hsl = color.toHSL();
         var hue = (hsl.h + amount.value) % 360;
@@ -1392,6 +1405,10 @@ tree.functions = {
                 message: "math functions take numbers as parameters"
             };
         }
+    },
+    argb: function (color) {
+        return new(tree.Anonymous)(color.toARGB());
+
     }
 };
 
@@ -1416,7 +1433,7 @@ function clamp(val) {
     return Math.min(1, Math.max(0, val));
 }
 
-})(require('less/tree'));
+})(require('./tree'));
 (function (tree) {
 
 tree.Alpha = function (val) {
@@ -1433,7 +1450,7 @@ tree.Alpha.prototype = {
     }
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
 tree.Anonymous = function (string) {
@@ -1446,7 +1463,7 @@ tree.Anonymous.prototype = {
     eval: function () { return this }
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
 //
@@ -1491,7 +1508,7 @@ tree.Call.prototype = {
     }
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 //
 // RGB Colors - #ff0014, #eee
@@ -1507,11 +1524,6 @@ tree.Color = function (rgb, a) {
         this.rgb = rgb;
     } else if (rgb.length == 6) {
         this.rgb = rgb.match(/.{2}/g).map(function (c) {
-            return parseInt(c, 16);
-        });
-    } else if (rgb.length == 8) {
-        this.alpha = parseInt(rgb.substring(0,2), 16) / 255.0;
-        this.rgb = rgb.substr(2).match(/.{2}/g).map(function (c) {
             return parseInt(c, 16);
         });
     } else {
@@ -1585,11 +1597,19 @@ tree.Color.prototype = {
             h /= 6;
         }
         return { h: h * 360, s: s, l: l, a: a };
+    },
+    toARGB: function () {
+        var argb = [Math.round(this.alpha * 255)].concat(this.rgb);
+        return '#' + argb.map(function (i) {
+            i = Math.round(i);
+            i = (i > 255 ? 255 : (i < 0 ? 0 : i)).toString(16);
+            return i.length === 1 ? '0' + i : i;
+        }).join('');
     }
 };
 
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
 tree.Comment = function (value, silent) {
@@ -1603,7 +1623,7 @@ tree.Comment.prototype = {
     eval: function () { return this }
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
 //
@@ -1637,7 +1657,7 @@ tree.Dimension.prototype = {
     }
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
 tree.Directive = function (name, value) {
@@ -1670,13 +1690,14 @@ tree.Directive.prototype = {
     rulesets: function () { return tree.Ruleset.prototype.rulesets.apply(this.ruleset) }
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
-tree.Element = function (combinator, value) {
+tree.Element = function (combinator, value, index) {
     this.combinator = combinator instanceof tree.Combinator ?
                       combinator : new(tree.Combinator)(combinator);
     this.value = value ? value.trim() : "";
+    this.index = index;
 };
 tree.Element.prototype.toCSS = function (env) {
     return this.combinator.toCSS(env || {}) + this.value;
@@ -1705,7 +1726,7 @@ tree.Combinator.prototype.toCSS = function (env) {
     }[this.value];
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
 tree.Expression = function (value) { this.value = value };
@@ -1728,7 +1749,7 @@ tree.Expression.prototype = {
     }
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 //
 // CSS @import node
@@ -1749,12 +1770,12 @@ tree.Import = function (path, imports) {
 
     // The '.less' extension is optional
     if (path instanceof tree.Quoted) {
-        this.path = /\.(le?|c)ss$/.test(path.value) ? path.value : path.value + '.less';
+        this.path = /\.(le?|c)ss(\?.*)?$/.test(path.value) ? path.value : path.value + '.less';
     } else {
         this.path = path.value.value || path.value;
     }
 
-    this.css = /css$/.test(this.path);
+    this.css = /css(\?.*)?$/.test(this.path);
 
     // Only pre-compile .less files
     if (! this.css) {
@@ -1805,7 +1826,7 @@ tree.Import.prototype = {
     }
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
 tree.JavaScript = function (string, index, escaped) {
@@ -1855,7 +1876,7 @@ tree.JavaScript.prototype = {
     }
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 
 (function (tree) {
 
@@ -1865,7 +1886,7 @@ tree.Keyword.prototype = {
     toCSS: function () { return this.value }
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
 tree.mixin = {};
@@ -1971,7 +1992,7 @@ tree.mixin.Definition.prototype = {
     }
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
 tree.Operation = function (op, operands) {
@@ -2003,7 +2024,7 @@ tree.operate = function (op, a, b) {
     }
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
 tree.Quoted = function (str, content, escaped, i) {
@@ -2032,7 +2053,7 @@ tree.Quoted.prototype = {
     }
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
 tree.Rule = function (name, value, important, index) {
@@ -2070,7 +2091,7 @@ tree.Shorthand.prototype = {
     eval: function () { return this }
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
 tree.Ruleset = function (selectors, rules) {
@@ -2163,7 +2184,7 @@ tree.Ruleset.prototype = {
             if (rule !== self) {
                 for (var j = 0; j < rule.selectors.length; j++) {
                     if (match = selector.match(rule.selectors[j])) {
-                        if (selector.elements.length > 1) {
+                        if (selector.elements.length > rule.selectors[j].elements.length) {
                             Array.prototype.push.apply(rules, rule.find(
                                 new(tree.Selector)(selector.elements.slice(1)), self));
                         } else {
@@ -2282,7 +2303,7 @@ tree.Ruleset.prototype = {
         }
     }
 };
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
 tree.Selector = function (elements) {
@@ -2292,11 +2313,20 @@ tree.Selector = function (elements) {
     }
 };
 tree.Selector.prototype.match = function (other) {
-    if (this.elements[0].value === other.elements[0].value) {
-        return true;
-    } else {
+    var len  = this.elements.length,
+        olen = other.elements.length,
+        max  = Math.min(len, olen);
+
+    if (len < olen) {
         return false;
+    } else {
+        for (var i = 0; i < max; i++) {
+            if (this.elements[i].value !== other.elements[i].value) {
+                return false;
+            }
+        }
     }
+    return true;
 };
 tree.Selector.prototype.toCSS = function (env) {
     if (this._css) { return this._css }
@@ -2310,7 +2340,7 @@ tree.Selector.prototype.toCSS = function (env) {
     }).join('');
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
 tree.URL = function (val, paths) {
@@ -2318,7 +2348,7 @@ tree.URL = function (val, paths) {
         this.attrs = val;
     } else {
         // Add the base path if the URL is relative and we are in the browser
-        if (!/^(?:https?:\/|file:\/|data:\/)?\//.test(val.value) && paths.length > 0 && typeof(window) !== 'undefined') {
+        if (!/^(?:https?:\/\/|file:\/\/|data:)?/.test(val.value) && paths.length > 0 && typeof(window) !== 'undefined') {
             val.value = paths[0] + (val.value.charAt(0) === '/' ? val.value.slice(1) : val.value);
         }
         this.value = val;
@@ -2335,7 +2365,7 @@ tree.URL.prototype = {
     }
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
 tree.Value = function (value) {
@@ -2359,7 +2389,7 @@ tree.Value.prototype = {
     }
 };
 
-})(require('less/tree'));
+})(require('../tree'));
 (function (tree) {
 
 tree.Variable = function (name, index) { this.name = name, this.index = index };
@@ -2383,14 +2413,14 @@ tree.Variable.prototype = {
     }
 };
 
-})(require('less/tree'));
-require('less/tree').find = function (obj, fun) {
+})(require('../tree'));
+require('./tree').find = function (obj, fun) {
     for (var i = 0, r; i < obj.length; i++) {
         if (r = fun.call(obj, obj[i])) { return r }
     }
     return null;
 };
-require('less/tree').jsify = function (obj) {
+require('./tree').jsify = function (obj) {
     if (Array.isArray(obj.value) && (obj.value.length > 1)) {
         return '[' + obj.value.map(function (v) { return v.toCSS(false) }).join(', ') + ']';
     } else {
@@ -2500,8 +2530,14 @@ function loadStyles() {
     for (var i = 0; i < styles.length; i++) {
         if (styles[i].type.match(typePattern)) {
             new(less.Parser)().parse(styles[i].innerHTML || '', function (e, tree) {
-                styles[i].type      = 'text/css';
-                styles[i].innerHTML = tree.toCSS();
+                var css = tree.toCSS();
+                var style = styles[i];
+                try {
+                    style.innerHTML = css;
+                } catch (_) {
+                    style.styleSheets.cssText = css;
+                }
+                style.type = 'text/css';
             });
         }
     }
