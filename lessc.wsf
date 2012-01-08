@@ -14,6 +14,7 @@ Licensed under the Apache 2.0 License.
         href: ''
     };
     var fso = new ActiveXObject("Scripting.FileSystemObject");
+    var input = null;
 
     var util = {
         readText: function (filename) {
@@ -39,7 +40,8 @@ Licensed under the Apache 2.0 License.
             this.url = url;
         },
         send: function () {
-            var filename = fso.GetAbsolutePathName(this.url);
+            // get the file path relative to the input less file
+            var filename = fso.GetAbsolutePathName(fso.BuildPath(fso.GetParentFolderName(input),this.url));
             //WScript.StdErr.WriteLine("XHR.send " + filename);
             
             // Little hack so *.less will resolve to *.less.css also. Helps with Visual Studio 
@@ -93,7 +95,7 @@ Licensed under the Apache 2.0 License.
         args[i] = arg;
     }
 
-    var input = args[0];
+    input = args[0];
     var output = args[1];
 
     if (! input) {
