@@ -95,9 +95,30 @@ Licensed under the Apache 2.0 License.
         args[i] = arg;
     }
 
+    /*
+    http://ss64.com/vb/filesystemobject.html
+    */
+
     input = args[0];
     var output = args[1];
+	
+	if (fso.folderexists(input)) {
+	  e = new Enumerator(fso.getfolder(input).files);
+      for( ; !e.atEnd(); e.moveNext() ) {
+        if (e.item().path.toLowerCase().lastIndexOf('.less') != -1) {
+          convert(e.item(),output + '\\' + e.item().name.replace('\.less','.css'));
+		}  
+      }
+	}
+	else {
+      if (fso.folderexists(output)) {
+	    output = output + '\\' + fso.getfile(input).name.replace('\.less','.css');
+	  }
+	  convert(input,output);
+    }
 
+	
+function convert(input, output) {	
     if (! input) {
         WScript.StdErr.WriteLine("lessc.wsf: no input files");
         WScript.StdErr.WriteLine("Usage: cscript //nologo lessc.wsf input.less [output.css] [-compress]");
@@ -153,5 +174,7 @@ Licensed under the Apache 2.0 License.
         }
         WScript.Quit(3);
     }            
+	
+}	
 </script>
 </job>
