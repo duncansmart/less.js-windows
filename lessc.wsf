@@ -84,7 +84,7 @@ Licensed under the Apache 2.0 License.
 <script language="jscript"> 
     // Parse args
     var args = {};
-    for(var i = 0; i < WScript.Arguments.Length; i++) {
+    for (var i = 0; i < WScript.Arguments.Length; i++) {
         var arg = WScript.Arguments.Item(i);
         // Handle "-switch" and "--switch"
         var match = arg.match(/^--?([a-z][0-9a-z-]*)$/i);
@@ -95,86 +95,97 @@ Licensed under the Apache 2.0 License.
         args[i] = arg;
     }
 
-    /*
-    http://ss64.com/vb/filesystemobject.html
-    */
-
     input = args[0];
     var output = args[1];
-	
-	if (fso.folderexists(input)) {
-	  e = new Enumerator(fso.getfolder(input).files);
-      for( ; !e.atEnd(); e.moveNext() ) {
-        if (e.item().path.toLowerCase().lastIndexOf('.less') != -1) {
-          convert(e.item(),output + '\\' + e.item().name.replace('\.less','.css'));
-		}  
-      }
-	}
-	else {
-      if (fso.folderexists(output)) {
-	    output = output + '\\' + fso.getfile(input).name.replace('\.less','.css');
-	  }
-	  convert(input,output);
-    }
 
-	
-function convert(input, output) {	
-    if (! input) {
-        WScript.StdErr.WriteLine("lessc.wsf: no input files");
-        WScript.StdErr.WriteLine("Usage: cscript //nologo lessc.wsf input.less [output.css] [-compress]");
-        WScript.Quit(1);
-    }
-
-    var data;
-    if (input == '-') {
-        var chunks = [];
-        while (!WScript.StdIn.AtEndOfStream)
-            chunks.push(WScript.StdIn.ReadAll());
-        data = chunks.join('');
+    if (fso.folderExists(input)) {
+        var files = getFiles(input, /\.less$/i);
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            convert(file.path, output + '\\' + file.name.replace( /\.less$/i, '.css'));
+        }
     }
     else {
-        data = util.readText(input);
-    }    
-
-    var parser = new less.Parser( {
-        filename: input
-    });
-
-    try {
-        parser.parse(data, function (err, tree) {
-            if (err) {
-                WScript.StdErr.WriteLine("ERR: ");
-                for(var i in err) {
-                    if (err[i]) {
-                        WScript.StdErr.WriteLine("  "+ i + ': ' + err[i]);
-                    }
-                }
-                WScript.Quit(2);
-            } 
-            else {
-                var css = tree.toCSS( {compress: args.compress} );
-                if (output) {
-                    var outputfile = fso.CreateTextFile(output);
-                    outputfile.Write(css);
-                    outputfile.Close();
-                }
-                else {
-                    WScript.StdOut.Write(css);
-                }
-            }
-        });
+        if (fso.folderexists(output)) {
+            output = output + '\\' + fso.getfile(input).name.replace('\.less', '.css');
+        }
+        convert(input, output);
     }
-    catch (e)
-    {
-        WScript.StdErr.WriteLine("ERROR:");
-        for(var i in e) {
-            if (e[i]) {
-                WScript.StdErr.WriteLine("  "+ i + ': ' + e[i]);
+
+    // Returns array of {name:'foo.bar', path:'c:\baz\foo.bar'} for given directory and pattern
+    function getFiles(dir, regex) {
+        var e = new Enumerator(fso.getFolder(dir).files);
+        var files = []
+        for (; !e.atEnd(); e.moveNext()) {
+            if (regex.test(e.item().path)) {
+                files.push({
+                    name: e.item().name, 
+                    path: e.item().path
+                });
             }
         }
-        WScript.Quit(3);
-    }            
-	
-}	
+        return files;
+    }
+
+    function convert(input, output) {
+        if (!input) {
+            WScript.StdErr.WriteLine("lessc.wsf: no input files");
+            WScript.StdErr.WriteLine("Usage:");
+            WScript.StdErr.WriteLine("  Single file: cscript //nologo lessc.wsf input.less [output.css] [-compress]");
+            WScript.StdErr.WriteLine("  Directory:   cscript //nologo lessc.wsf inputdir outputdir [-compress]");
+            WScript.Quit(1);
+        }
+
+        var data;
+        if (input == '-') {
+            var chunks = [];
+            while (!WScript.StdIn.AtEndOfStream)
+            chunks.push(WScript.StdIn.ReadAll());
+            data = chunks.join('');
+        }
+        else {
+            data = util.readText(input);
+        }
+
+        var parser = new less.Parser({
+            filename: input
+        });
+
+        try {
+            parser.parse(data, function (err, tree) {
+                if (err) {
+                    WScript.StdErr.WriteLine("ERR: ");
+                    for (var i in err) {
+                        if (err[i]) {
+                            WScript.StdErr.WriteLine("  " + i + ': ' + err[i]);
+                        }
+                    }
+                    WScript.Quit(2);
+                }
+                else {
+                    var css = tree.toCSS({
+                        compress: args.compress
+                    });
+                    if (output) {
+                        var outputfile = fso.CreateTextFile(output);
+                        outputfile.Write(css);
+                        outputfile.Close();
+                    }
+                    else {
+                        WScript.StdOut.Write(css);
+                    }
+                }
+            });
+        }
+        catch (e) {
+            WScript.StdErr.WriteLine("ERROR:");
+            for (var i in e) {
+                if (e[i]) {
+                    WScript.StdErr.WriteLine("  " + i + ': ' + e[i]);
+                }
+            }
+            WScript.Quit(3);
+        }
+    }
 </script>
 </job>
