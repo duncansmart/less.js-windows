@@ -40,8 +40,10 @@ Licensed under the Apache 2.0 License.
             this.url = url;
         },
         send: function () {
-            // get the file path relative to the input less file
-            var filename = fso.GetAbsolutePathName(fso.BuildPath(fso.GetParentFolderName(input),this.url));
+            // get the file path relative to the input less file/directory
+            var currDir = fso.folderExists(input) ? input : fso.getParentFolderName(input);
+            var filename = fso.BuildPath(currDir, this.url);
+            
             //WScript.StdErr.WriteLine("XHR.send " + filename);
             
             // Little hack so *.less will resolve to *.less.css also. Helps with Visual Studio 
@@ -99,6 +101,7 @@ Licensed under the Apache 2.0 License.
     var output = args[1];
 
     if (fso.folderExists(input)) {
+        input = fso.getAbsolutePathName(input);
         var files = getFiles(input, /\.less$/i);
         for (var i = 0; i < files.length; i++) {
             var file = files[i];
@@ -107,7 +110,7 @@ Licensed under the Apache 2.0 License.
     }
     else {
         if (fso.folderexists(output)) {
-            output = output + '\\' + fso.getfile(input).name.replace('\.less', '.css');
+            output = fso.getAbsolutePathName(output) + '\\' + fso.getfile(input).name.replace(/\.less$/i, '.css');
         }
         convert(input, output);
     }
