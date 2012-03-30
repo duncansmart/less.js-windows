@@ -81,7 +81,7 @@ Licensed under the Apache 2.0 License.
 </script>
 
 <!-- less.js from https://github.com/cloudhead/less.js/tree/master/dist/ -->
-<script language="jscript" src="less.js" />
+<script language="jscript" src="less-1.3.0.js" />
 
 <script language="jscript"> 
     // Parse args
@@ -156,6 +156,7 @@ Licensed under the Apache 2.0 License.
 
         try {
             parser.parse(data, function (err, tree) {
+
                 if (err) {
                     WScript.StdErr.WriteLine("ERR: ");
                     for (var i in err) {
@@ -188,6 +189,17 @@ Licensed under the Apache 2.0 License.
                 }
             }
             WScript.Quit(3);
+        }
+
+        // Sometimes less will return errors inside the fake HTML element
+        if (document._dummyElement.innerHTML && document._dummyElement.innerHTML.match(/Syntax Error/i)) {
+            var s = document._dummyElement.innerHTML;
+            s = s.replace(/<[^>]+(\/?)>/g, function (m) { return m.indexOf('/') > 0 && m !== '</label>' ? "\n" : '' });
+            s = s.replace(/\n+/g, '\n');
+
+            WScript.StdErr.WriteLine("ERR: ");
+            WScript.StdErr.WriteLine(s);
+            WScript.Quit(2);
         }
     }
 </script>
