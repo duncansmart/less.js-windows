@@ -49,3 +49,7 @@ h2 {
 #foo {
   color: #eeffff;
 }
+/* subdir/test-import3.less */
+#subdir {
+  hello: 'world';
+}
