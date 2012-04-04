@@ -171,6 +171,14 @@ Licensed under the Apache 2.0 License.
                         compress: args.compress
                     });
                     if (output) {
+                        if(fso.FileExists(output))
+     			    {
+					   var checkfile = fso.GetFile(output);
+					   if(checkfile.Attributes & 1)
+					   {
+					       checkfile.Attributes = checkfile.Attributes ^ 1
+					   }
+				    }
                         var outputfile = fso.CreateTextFile(output);
                         outputfile.Write(css);
                         outputfile.Close();
