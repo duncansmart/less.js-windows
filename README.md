@@ -16,7 +16,7 @@ If you don't specify an output.css the result is written to standard output. The
 
 I've added a couple of test files, so you can see if it's working like so:
 
-    C:\code\lessc-wsh>lessc test.less
+    C:\code\lessc-wsh>lessc test/test.less
     /* Variables */
     #header {
       color: #4d926f;
