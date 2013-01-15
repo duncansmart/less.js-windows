@@ -16,26 +16,14 @@ Licensed under the Apache 2.0 License.
     var fso = new ActiveXObject("Scripting.FileSystemObject");
     var input = null;
 
-    var bomArr = [], bi;
-    bomArr[0] = String.fromCharCode(0xEF, 0xBB, 0xBF);
-    bomArr[1] = String.fromCharCode(0x10F, 0xBB, 0x17C); // reading Windows-1250 into utf
-
     var util = {
         readText: function (filename) {
-            //WScript.StdErr.WriteLine("readText: " + filename);
-            var file = fso.OpenTextFile(filename);
-            // Don't error on empty files
-            var text = file.AtEndOfStream ? '' : file.ReadAll();
-
-            // Strip off any UTF-8 BOM
-            for(bi = 0; bi < bomArr.length; bi++) {
-                utf8bom = bomArr[bi];
-                if (text.substr(0, utf8bom.length) == utf8bom) {
-                  text = text.substr(utf8bom.length);
-                  break;
-                }
-            }
-            file.Close();
+            var stream = WScript.CreateObject("ADODB.Stream"); // this should solve issue with OpenTextFile
+            stream.Charset = 'utf-8';
+            stream.Open();
+            stream.LoadFromFile(filename);
+            var text = stream.ReadText();
+            stream.close();
             return text;
         }
     };
