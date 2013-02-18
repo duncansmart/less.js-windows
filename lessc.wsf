@@ -2,7 +2,7 @@
 Less.js compiler for Windows Script Host
 http://blog.dotsmart.net/
 
-Copyright (c) 2010, Duncan Smart
+Copyright (c) 2013, Duncan Smart
 Licensed under the Apache 2.0 License.
 -->
 <job>
@@ -11,7 +11,9 @@ Licensed under the Apache 2.0 License.
     var window = this;
     var location = window.location = { 
         port: 0,
-        href: ''
+        href: '',
+        protocol: 'http:',      // vank: added to support development env setting
+        hostname: 'localhost'   // vank: added to support development env setting
     };
     var fso = new ActiveXObject("Scripting.FileSystemObject");
     var input = null;
@@ -70,9 +72,23 @@ Licensed under the Apache 2.0 License.
         getElementsByTagName: function(){ return []; },
         getElementById: function(){ return this._dummyElement; },
         createElement:  function(){ return this._dummyElement; },
-        createTextNode: function(){ return this._dummyElement; }
+        createTextNode: function () { return this._dummyElement; },
+        // vank: added 'body' to capture errors in @imported files
+        body: {
+            replaceChild: function (elem) {
+                if (!elem.innerHTML.match(/null or not an object/i)) {
+                    document._dummyElement.error = elem.innerHTML;
+                }
+            }
+        }
     };        
         
+    // vank: added 'setInterval' and 'clearInterval' to support development env setting
+    function setInterval(f, int) {
+        f();
+        return 'x';
+    }
+    function clearInterval(t) { }
 </script>
 
 <!-- less.js from https://github.com/cloudhead/less.js/tree/master/dist/ -->
@@ -166,12 +182,10 @@ Licensed under the Apache 2.0 License.
                         compress: args.compress
                     });
                     if (output) {
-                        if(fso.FileExists(output))
-     			    {
-					   var checkfile = fso.GetFile(output);
-					   if(checkfile.Attributes & 1)
-					   {
-					       checkfile.Attributes = checkfile.Attributes ^ 1
+                        if (fso.FileExists(output)) {
+                            var checkfile = fso.GetFile(output);
+                            if (checkfile.Attributes & 1) {
+					       		checkfile.Attributes = checkfile.Attributes ^ 1
 					   }
 				    }
                         var outputfile = fso.CreateTextFile(output);
@@ -204,6 +218,16 @@ Licensed under the Apache 2.0 License.
             WScript.StdErr.WriteLine(s);
             WScript.Quit(2);
         }
+        // vank: added to display output from errors in @imported files.
+        if (document._dummyElement.error && document._dummyElement.error.match(/Syntax Error/i)) {
+            var s = document._dummyElement.error;
+            s = s.replace(/<[^>]+(\/?)>/g, function (m) { return m.indexOf('/') > 0 && m !== '</label>' ? "\n" : '' });
+            s = s.replace(/\n+/g, '\n');
+
+            WScript.StdErr.WriteLine("ERR: ");
+            WScript.StdErr.WriteLine(s);
+            WScript.Quit(2);
+		}
     }
 </script>
 </job>
