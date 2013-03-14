@@ -1,2 +1,1 @@
-::For convenience
-@cscript //nologo "%~dp0lessc.wsf" %*
+@"%~dp0bin\node.exe" "%~dp0bin\lessc" %*
