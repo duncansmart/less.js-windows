@@ -1,33 +1,30 @@
 # LESS.js for Windows
-A simple command-line utilty for Windows that will compile `*.less` files to CSS using [less.js](https://github.com/cloudhead/less.js/).
 
-[Original blog post](http://blog.dotsmart.net/2010/11/26/running-the-less-js-command-line-compiler-on-windows/).
+A standalone version of the [LESS](http://lesscss.org/) command-line compiler that will run on Windows with no other dependencies.
+
+Consists of a standalone version of [Node.js](http://nodejs.org/) (compressed from 5 MB to 1.8 MB using [UPX](http://upx.sourceforge.net)) and the bare minimum less.js files. The whole package weighs in at just over 2 MB.
+
+
+## Install
+
+Either clone the repository or **[download and extract the latest ZIP](https://github.com/duncansmart/less.js-windows/archive/master.zip)** and invoke `lessc.cmd` as detailed below.
+
 
 ## Usage
-To use it, invoke lessc.wsf via cscript.exe like so:
 
-    cscript //nologo lessc.wsf input.less [output.css] [-compress]
+Basic usage:
 
-I've also added a less.cmd shim which will simplify it to just:
+    lessc  path\source.less  path\output.css
 
-    lessc input.less [output.css] [-compress]
-    
-If you don't specify an output.css the result is written to standard output. The -compress option minifies the output. I'll look into implementing the other command-line arguments supported by lessc in due course.
+Compress CSS:
 
-I've added a couple of test files, so you can see if it's working like so:
+    lessc  --yui-compress  path\source.less  path\output.css
 
-    C:\code\lessc-wsh>lessc test/test.less
-    /* Variables */
-    #header {
-      color: #4d926f;
-    }
-    h2 {
-      color: #4d926f;
-    }
-    /* Mixins */
-    #header {
-      -moz-border-radius: 5px;
-      -webkit-border-radius: 5px;
-      border-radius: 5px;
-    }
-    ...
+For full usage:
+
+    lessc -h
+
+
+## History
+
+Previously the project used the Windows Script Host `cscript.exe` as its runtime. Over time this was proving to be diffcult to support as it was essentially using the browser-based version of less.js and stubbing out objects like `window` and `document` to mimic the browser environment. This version is still available in the [windows-script-host](https://github.com/duncansmart/less.js-windows/tree/windows-script-host) branch.
