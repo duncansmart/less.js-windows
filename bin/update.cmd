@@ -18,10 +18,12 @@ if %ERRORLEVEL% == 0 (
 )
 
 :: Update less
-call npm update less
+call npm update less > nul 2>&1
 
 :: Copy files into place
 xcopy /s /y /q "%userprofile%\node_modules\less\lib\less\*" ..\lib\less\ > nul
 xcopy /s /y /q "%userprofile%\node_modules\less\bin\*" .\ > nul
+
+xcopy /y /q "%userprofile%\node_modules\less\node_modules\ycssmin\*.js*" ..\lib\less\node_modules\ycssmin\
 
 popd
