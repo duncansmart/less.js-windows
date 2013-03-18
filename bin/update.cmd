@@ -17,13 +17,21 @@ if %ERRORLEVEL% == 0 (
     echo Warning: upx not found, node.exe not compressed.
 )
 
+if exist "node_modules\less" (
+    call npm update less > nul 2>&1
+) else (
+    call npm install less > nul 2>&1
+)
+
 :: Update less
 call npm update less > nul 2>&1
 
 :: Copy files into place
-xcopy /s /y /q "%userprofile%\node_modules\less\lib\less\*" ..\lib\less\ > nul
-xcopy /s /y /q "%userprofile%\node_modules\less\bin\*" .\ > nul
+xcopy /s /y /q "node_modules\less\LICENSE" ..\lib\less\ > nul
+xcopy /s /y /q "node_modules\less\lib\less\*" ..\lib\less\ > nul
+xcopy /s /y /q "node_modules\less\bin\*" .\ > nul
 
-xcopy /y /q "%userprofile%\node_modules\less\node_modules\ycssmin\*.js*" ..\lib\less\node_modules\ycssmin\
+xcopy /y /q "node_modules\less\node_modules\ycssmin\*.js*" ..\lib\less\node_modules\ycssmin\ > nul
+xcopy /y /q "node_modules\less\node_modules\ycssmin\LICENSE" ..\lib\less\node_modules\ycssmin\ > nul
 
 popd

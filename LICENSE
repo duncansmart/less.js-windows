@@ -1,0 +1,5 @@
+Licenses 
+
+* Node: bin/Node LICENSE.txt
+* less.js: lib/less/LICENSE 
+* ycssmin: lib/less/node_modules/ycssmin/LICENSE
