@@ -7,7 +7,7 @@ Consists of a standalone version of [Node.js](http://nodejs.org/) (compressed fr
 
 ## Install
 
-Either clone the repository or **[download and extract the latest ZIP](https://github.com/duncansmart/less.js-windows/archive/master.zip)** and invoke `lessc.cmd` as detailed below.
+Either clone the repository or **[download and extract the release ZIP](https://github.com/duncansmart/less.js-windows/releases)** and invoke `lessc.cmd` as detailed below.
 
 
 ## Usage
