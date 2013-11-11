@@ -1,27 +1,27 @@
 @echo off
 pushd "%~dp0\bin"
 
-:: create httpget.js for use with cscript.exe
-set HTTPGET_JS="%TEMP%\httpget.js"
-echo (function(b,d){var a=b.Arguments(0);var c=b.Arguments(1);var f=new d("MSXML2.XMLHTTP");f.open("GET",a,false);f.send();if(f.Status==200){var e=new d("ADODB.Stream");e.Open();e.Type=1;e.Write(f.ResponseBody);e.Position=0;e.SaveToFile(c);e.Close()}else{b.Echo("Error: HTTP "+f.status+" "+f.statusText)}})(WScript,ActiveXObject); > %HTTPGET_JS%
-
 :: Update node.exe
 if not exist node.exe (
-    cscript //nologo %HTTPGET_JS% http://nodejs.org/dist/latest/node.exe node.exe
+    echo Downloading latest node.exe
+    cscript //nologo "%~dp0\tools\httpget.js" http://nodejs.org/dist/latest/node.exe node.exe
 )
 
-:: Install/Update less
+:: Install/Update less (assumes npm is installed globally)
 if exist "node_modules\less" (
-    call npm update less > nul 2>&1
+    echo Updating less
+    call npm update less --quiet
 ) else (
-    call npm install less > nul 2>&1
+    echo Installing less
+    call npm install less --quiet
 )
 
-:: Recursively grabs nested node_modules and moves them to the top level where 
-:: the require() algorithm will eventually find them. We do this because
-:: node_modules can get nested beyond Win32's MAX_PATH 260 char limit.
+:: Due to the way node_modues work, the directory depth can get very deep and go beyond MAX_PATH (260 chars). 
+:: Therefore grab all node_modues directories and move them up to baseNodeModuleDir. Node's require() will then 
+:: traverse up and find them at the higher level. Should be fine as long as there are no versioning conflicts.
 :FLATTEN_NODE_MODULES
-set BASE_MODULES=%~dp0node_modules
+echo Flatenning node_modules
+set BASE_MODULES=%~dp0bin\node_modules
 pushd "%BASE_MODULES%"
 for /l %%I in (1,1,3) do (
     for /d /r %%D in (node_modules) do if exist %%D (
@@ -36,9 +36,10 @@ for /l %%I in (1,1,3) do (
 )
 
 :: clean varous junk directories from node_modules
-:CLEAN_JS
+:CLEAN_NODE_MODULES
+echo Cleaning node_modules
 for /d /r %%D in (*) do  (
-    echo %%D
+    rem echo %%D
     if "%%~nD"=="build" rd /s /q "%%D"
     if "%%~nD"=="images" rd /s /q "%%D"
     if "%%~nD"=="example" rd /s /q "%%D"
@@ -48,15 +49,20 @@ for /d /r %%D in (*) do  (
     if "%%~nD"=="tmp" rd /s /q "%%D"
     if "%%~nD"=="man" rd /s /q "%%D"
 )
-:: various less junk
-rd /s /q "less\.grunt"
-rd /s /q "less\.idea"
-rd /s /q "less\benchmark"
-rd /s /q "less\dist"
-rd /s /q "less\projectFilesBackup"
+:: various less stuff we don't need to redistribute
+rd /s /q "less\.grunt" 2>nul
+rd /s /q "less\.idea" 2>nul
+rd /s /q "less\benchmark" 2>nul
+rd /s /q "less\dist" 2>nul
+rd /s /q "less\projectFilesBackup" 2>nul
 
-
-::tidy up
-del %HTTPGET_JS%
+:PACKAGE
+echo Creating release.zip
+set ZIP="%~dp0tools\7-zip\7za.exe"
+set RELEASE_ZIP="%~dp0release.zip"
+pushd "%~dp0"
+if exist %RELEASE_ZIP% del %RELEASE_ZIP%
+%ZIP% a %RELEASE_ZIP% bin\* -i!lessc.cmd -i!lessc-watch.cmd -i!LICENSE -i!README.md >nul
+popd
 
 popd
