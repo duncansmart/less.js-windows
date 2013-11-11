@@ -16,8 +16,8 @@ if exist "node_modules\less" (
     call npm install less --quiet
 )
 
-:: Due to the way node_modues work, the directory depth can get very deep and go beyond MAX_PATH (260 chars). 
-:: Therefore grab all node_modues directories and move them up to baseNodeModuleDir. Node's require() will then 
+:: Due to the way node_modules work, the directory depth can get very deep and go beyond MAX_PATH (260 chars). 
+:: Therefore grab all node_modues directories and move them up to base node_modules. Node's require() will then 
 :: traverse up and find them at the higher level. Should be fine as long as there are no versioning conflicts.
 :FLATTEN_NODE_MODULES
 echo Flatenning node_modules
@@ -57,12 +57,14 @@ rd /s /q "less\dist" 2>nul
 rd /s /q "less\projectFilesBackup" 2>nul
 
 :PACKAGE
-echo Creating release.zip
-set ZIP="%~dp0tools\7-zip\7za.exe"
-set RELEASE_ZIP="%~dp0release.zip"
 pushd "%~dp0"
+::parse version from 'lessc --version' output "lessc 1.5.0 (LESS Compiler) [JavaScript]"
+for /f "tokens=2" %%V in ('bin\node bin\node_modules\less\bin\lessc --version') do set LESSVER=%%V
+
+set RELEASE_ZIP="%~dp0less.js-windows-v%LESSVER%.zip"
+echo Creating %RELEASE_ZIP%
 if exist %RELEASE_ZIP% del %RELEASE_ZIP%
-%ZIP% a %RELEASE_ZIP% bin\* -i!lessc.cmd -i!lessc-watch.cmd -i!LICENSE -i!README.md >nul
+"%~dp0tools\7-zip\7za.exe" a %RELEASE_ZIP% bin\* -i!lessc.cmd -i!lessc-watch.cmd -i!LICENSE -i!README.md >nul
 popd
 
 popd
