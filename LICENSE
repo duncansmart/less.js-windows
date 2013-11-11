@@ -23,5 +23,4 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ## Other Licenses ##
 
 * Node: bin/Node LICENSE.txt
-* less.js: lib/less/LICENSE 
-* ycssmin: lib/less/node_modules/ycssmin/LICENSE
+* less.js: bin/node_modules/less/LICENSE 
