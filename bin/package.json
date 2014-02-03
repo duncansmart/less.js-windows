@@ -1,0 +1,10 @@
+{  
+  "name": "lessjs-windows",  
+  "version": "0.0.1",  
+  "dependencies" : {  
+    "less" : ">=0.1"
+  },  
+  "engine": {  
+    "node": ">=0.6"  
+  }  
+}

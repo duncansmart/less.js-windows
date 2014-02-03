@@ -8,13 +8,8 @@ if not exist node.exe (
 )
 
 :: Install/Update less (assumes npm is installed globally)
-if exist "node_modules\less" (
-    echo Updating less
-    call npm update less --quiet
-) else (
-    echo Installing less
-    call npm install less --quiet
-)
+echo Install/update less ...
+call npm update --quiet
 
 :: Due to the way node_modules work, the directory depth can get very deep and go beyond MAX_PATH (260 chars). 
 :: Therefore grab all node_modues directories and move them up to base node_modules. Node's require() will then 
