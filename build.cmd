@@ -36,7 +36,6 @@ echo Cleaning node_modules
 for /d /r %%D in (*) do  (
     rem echo %%D
     if "%%~nD"=="build" rd /s /q "%%D"
-    if "%%~nD"=="images" rd /s /q "%%D"
     if "%%~nD"=="example" rd /s /q "%%D"
     if "%%~nD"=="tests" rd /s /q "%%D"
     if "%%~nD"=="test" rd /s /q "%%D"
