@@ -16,22 +16,15 @@ call npm update --quiet
 :: traverse up and find them at the higher level. Should be fine as long as there are no versioning conflicts.
 :FLATTEN_NODE_MODULES
 echo Flatenning node_modules
-set BASE_MODULES=%~dp0bin\node_modules
-pushd "%BASE_MODULES%"
-for /l %%I in (1,1,3) do (
-    for /d /r %%D in (node_modules) do if exist %%D (
-        pushd "%%D"
-        for /d %%M in (*) do (
-            rem echo %%~dpnM
-            move /y "%%M" "%BASE_MODULES%\%%M" >nul
-        )
-        popd
-        rmdir "%%D"
-    )
-)
+
+where flatten-packages >nul
+if ERRORLEVEL 1 call npm install -g flatten-packages
+
+call flatten-packages
 
 :: clean varous junk directories from node_modules
 :CLEAN_NODE_MODULES
+pushd node_modules
 echo Cleaning node_modules
 for /d /r %%D in (*) do  (
     rem echo %%D
@@ -50,6 +43,7 @@ rd /s /q "less\benchmark" 2>nul
 rd /s /q "less\dist" 2>nul
 rd /s /q "less\projectFilesBackup" 2>nul
 
+
 :PACKAGE
 pushd "%~dp0"
 ::parse version from 'lessc --version' output "lessc 1.5.0 (LESS Compiler) [JavaScript]"
@@ -59,6 +53,7 @@ set RELEASE_ZIP="%~dp0less.js-windows-v%LESSVER%.zip"
 echo Creating %RELEASE_ZIP%
 if exist %RELEASE_ZIP% del %RELEASE_ZIP%
 "%~dp0tools\7-zip\7za.exe" a %RELEASE_ZIP% bin\* -i!lessc.cmd -i!lessc-watch.cmd -i!LICENSE -i!README.md >nul
-popd
 
+popd
+popd
 popd
